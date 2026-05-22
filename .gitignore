@@ -64,6 +64,11 @@ application-prod.properties
 
 ### Trae tool files ###
 .trae/
+.trae/specs/
 
 ### Spring Boot default files ###
 HELP.md
+
+### Development folders ###
+# Spring AI Alibaba 子项目（框架源码）
+spring-ai-alibaba/

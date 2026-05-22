@@ -38,7 +38,7 @@ public class CourseDetailController {
             return Result.success(detail);
         } catch (Exception e) {
             log.error("查询课程详情失败，courseId：{}", courseId, e);
-            return Result.error("查询课程详情失败：" + e.getMessage());
+            return Result.error("查询课程详情失败，请稍后重试");
         }
     }
 
@@ -66,7 +66,7 @@ public class CourseDetailController {
             return Result.success(comments);
         } catch (Exception e) {
             log.error("查询课程评论失败，courseId：{}", courseId, e);
-            return Result.error("查询课程评论失败：" + e.getMessage());
+            return Result.error("查询课程评论失败，请稍后重试");
         }
     }
 
@@ -93,7 +93,7 @@ public class CourseDetailController {
             return Result.badRequest(e.getMessage());
         } catch (Exception e) {
             log.error("新增课程评论失败，courseId：{}", courseId, e);
-            return Result.error("新增评论失败：" + e.getMessage());
+            return Result.error("新增评论失败，请稍后重试");
         }
     }
 
@@ -118,7 +118,7 @@ public class CourseDetailController {
             }
         } catch (Exception e) {
             log.error("删除课程评论失败，courseId：{}，commentId：{}", courseId, commentId, e);
-            return Result.error("删除评论失败：" + e.getMessage());
+            return Result.error("删除评论失败，请稍后重试");
         }
     }
 
@@ -138,7 +138,7 @@ public class CourseDetailController {
             return Result.success(detail);
         } catch (Exception e) {
             log.error("查询课程基础信息失败，courseId：{}", courseId, e);
-            return Result.error("查询课程基础信息失败：" + e.getMessage());
+            return Result.error("查询课程基础信息失败，请稍后重试");
         }
     }
 }

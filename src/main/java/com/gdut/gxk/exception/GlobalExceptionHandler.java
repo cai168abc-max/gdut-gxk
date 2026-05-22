@@ -27,6 +27,7 @@ public class GlobalExceptionHandler {
     /**
      * 处理AI服务异常
      * 根据异常类型返回不同的HTTP状态码和错误信息
+     * ⭐ 关键：隐藏技术细节，返回用户友好的错误提示
      */
     @ExceptionHandler(AIException.class)
     public Result<Object> handleAIException(AIException e) {
@@ -36,19 +37,41 @@ public class GlobalExceptionHandler {
         // 根据错误类型确定HTTP状态码
         HttpStatus status = determineHttpStatus(e.getErrorType());
         
-        // 构建详细的错误响应
+        // ⭐ 用户友好的错误提示（隐藏技术细节）
+        String userMessage = buildUserFriendlyMessage(e.getErrorType());
+        
+        // 构建详细的错误响应（仅记录日志，不暴露给用户）
         Map<String, Object> errorDetails = new HashMap<>();
         errorDetails.put("errorType", e.getErrorType().name());
         errorDetails.put("errorCode", e.getErrorCode());
         errorDetails.put("retryable", e.isRetryable());
-        errorDetails.put("retryCount", e.getRetryCount());
         
         // 对于可重试的错误，提供重试建议
         if (e.isRetryable()) {
-            errorDetails.put("suggestion", "该错误通常可以通过重试解决，建议稍后重试");
+            errorDetails.put("suggestion", "建议稍后重试");
         }
         
-        return new Result<>(status.value(), e.getMessage(), errorDetails);
+        // ⭐ 只返回友好消息给用户，技术细节记录在日志中
+        return new Result<>(status.value(), userMessage, null);
+    }
+    
+    /**
+     * 构建用户友好的错误消息
+     * 根据不同的错误类型返回不同的友好提示
+     */
+    private String buildUserFriendlyMessage(AIException.ErrorType errorType) {
+        return switch (errorType) {
+            case TIMEOUT -> "AI服务响应超时，请稍后重试";
+            case RATE_LIMITED -> "当前AI服务调用频繁，请稍后再试";
+            case AUTH_ERROR -> "AI服务认证失败，请联系管理员";
+            case CONTENT_FILTERED -> "您的请求内容不符合规范，请调整后重试";
+            case INVALID_PARAM -> "请求参数有误，请检查后重试";
+            case CONTEXT_TOO_LONG -> "对话历史过长，请清除历史后重试";
+            case SERVICE_UNAVAILABLE -> "AI服务暂时不可用，请稍后重试";
+            case NETWORK_ERROR -> "网络连接异常，请检查网络后重试";
+            case MODEL_ERROR -> "AI服务内部错误，请稍后重试";
+            case UNKNOWN -> "AI服务异常，请稍后重试";
+        };
     }
     
     /**
@@ -140,12 +163,14 @@ public class GlobalExceptionHandler {
 
     /**
      * 处理运行时异常
+     * ⭐ 隐藏技术细节，返回用户友好的错误提示
      */
     @ExceptionHandler(RuntimeException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public Result<Object> handleRuntimeException(RuntimeException e) {
         log.error("运行时异常", e);
-        return Result.error("系统运行异常：" + e.getMessage());
+        // 隐藏技术细节，只返回友好提示
+        return Result.error("系统运行异常，请稍后重试");
     }
 
     /**

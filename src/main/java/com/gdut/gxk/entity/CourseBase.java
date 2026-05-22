@@ -67,13 +67,15 @@ public class CourseBase {
     private String courseTime;
 
     /**
-     * 课程安排（如“全学期线下（每周2次，机房上课）”）
+     * 课程安排（如"全学期线下（每周2次，机房上课）"）
+     * DDL列名：course_schedule
      */
     @TableField("course_schedule")
     private String courseSchedule;
 
     /**
      * 课程综合评分（AI定时更新，0.0-5.0）
+     * DDL列名：score
      */
     @TableField("score")
     private BigDecimal score;
@@ -85,8 +87,9 @@ public class CourseBase {
     private String aiSummary;
 
     /**
-     * 课程标签（逗号分隔，最多4个标签，无标签时为“暂无”）
+     * 课程标签（逗号分隔，最多4个标签，无标签时为"暂无"）
      * 示例："好评,给分高,人气"
+     * DDL列名：tag
      */
     @TableField("tag")
     private String tag;

@@ -23,7 +23,7 @@ public class DataMigrationController {
             migrationService.batchUpdateCourseId();
             return "课程ID更新成功";
         } catch (Exception e) {
-            return "更新失败：" + e.getMessage();
+            return "更新失败，请稍后重试";
         }
     }
 }

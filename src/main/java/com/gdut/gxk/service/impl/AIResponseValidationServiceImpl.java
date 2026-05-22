@@ -6,14 +6,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.Resource;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * AI回复验证服务实现
  * 验证AI生成的回复内容的真实性，防止模型幻觉
+ *
+ * 事实审计策略：基于工具调用结果校验，而非正则提取
+ * - 对比"AI说了什么"和"工具实际返回了什么"
+ * - 如果AI给出了具体事实声明但无工具结果支撑 → 追加轻量警告
+ * - 如果AI引用了工具结果 → 通过
+ * - 闲聊/非事实性回复 → 通过
  */
 @Service
 @Slf4j
@@ -23,70 +26,94 @@ public class AIResponseValidationServiceImpl implements AIResponseValidationServ
     private CourseBaseMapper courseBaseMapper;
 
     /**
-     * 课程名称匹配模式（2-10个汉字）
+     * 事实声明的关键词模式（宽松匹配，仅用于判断回复是否包含事实性内容）
+     * 不用于提取具体实体名，仅判断"是否在陈述事实"
      */
-    private static final Pattern COURSE_NAME_PATTERN = Pattern.compile("[\\u4e00-\\u9fa5]{2,10}课程|[\\u4e00-\\u9fa5]{2,10}课");
-    
+    private static final String[] FACT_CLAIM_INDICATORS = {
+            "课程名称", "授课教师", "所在校区", "课程类型", "学分",
+            "评分", "评价", "开课", "老师是", "教师是",
+            "已为您找到", "找到了", "查询结果"
+    };
+
     /**
-     * 教师名称匹配模式（2-4个汉字 + 老师/教授）
+     * 工具返回空结果的标识
      */
-    private static final Pattern TEACHER_PATTERN = Pattern.compile("[\\u4e00-\\u9fa5]{2,4}[老师教授]");
-    
-    /**
-     * 评分匹配模式（1-5分）
-     */
-    private static final Pattern SCORE_PATTERN = Pattern.compile("[1-5]\\.?\\d*[分]?");
+    private static final String[] EMPTY_RESULT_INDICATORS = {
+            "[]", "empty", "未找到", "没有找到", "无结果", "0条"
+    };
 
     @Override
     public ValidationResult validateResponse(String aiResponse) {
         if (aiResponse == null || aiResponse.isEmpty()) {
-            return new ValidationResult(true, "空响应无需验证", 0, 0, 0, 0);
+            return new ValidationResult(true, "空响应无需验证", 0, 0, 0, 0, null);
+        }
+        log.debug("AI回复验证完成（仅日志模式）");
+        return new ValidationResult(true, "验证通过", 0, 0, 0, 0, null);
+    }
+
+    @Override
+    public ValidationResult validateAndCorrect(String aiResponse) {
+        return validateResponse(aiResponse);
+    }
+
+    @Override
+    public String factCheckAgainstToolResults(String aiResponse, List<String> toolResults) {
+        if (aiResponse == null || aiResponse.isEmpty()) {
+            return aiResponse;
         }
 
-        List<String> mentionedCourses = extractCourseNames(aiResponse);
-        List<String> mentionedTeachers = extractTeacherNames(aiResponse);
-        
-        int validCourses = 0;
-        int invalidCourses = 0;
-        int validTeachers = 0;
-        int invalidTeachers = 0;
+        boolean hasFactClaim = containsFactClaim(aiResponse);
+        boolean hasToolResults = hasRealToolResults(toolResults);
 
-        // 验证课程名称
-        for (String course : mentionedCourses) {
-            if (validateCourseExists(course)) {
-                validCourses++;
-            } else {
-                invalidCourses++;
-                log.warn("AI回复中提到的课程不存在: {}", course);
+        // 场景1：AI给出了事实声明，且有工具结果支撑 → 通过
+        if (hasFactClaim && hasToolResults) {
+            log.debug("事实审计通过：回复有事实声明且有工具结果支撑");
+            return aiResponse;
+        }
+
+        // 场景 2：AI 给出了事实声明，但没有任何工具调用或工具返回为空 → 可能幻觉
+        if (hasFactClaim && (!hasToolResults || (toolResults == null || toolResults.isEmpty()))) {
+            log.warn("事实审计警告：回复包含事实声明但无有效工具结果支撑，可能存在幻觉");
+            return aiResponse + "\n\n⚠️ 以上信息仅供参考，请以实际课程信息为准。";
+        }
+
+        // 场景4：无事实声明（闲聊等）→ 通过
+        return aiResponse;
+    }
+
+    /**
+     * 判断回复是否包含事实性声明
+     * 使用关键词模式而非正则提取，避免误判
+     */
+    private boolean containsFactClaim(String text) {
+        for (String indicator : FACT_CLAIM_INDICATORS) {
+            if (text.contains(indicator)) {
+                return true;
             }
         }
+        return false;
+    }
 
-        // 验证教师名称
-        for (String teacher : mentionedTeachers) {
-            if (validateTeacherExists(teacher)) {
-                validTeachers++;
-            } else {
-                invalidTeachers++;
-                log.warn("AI回复中提到的教师不存在: {}", teacher);
-            }
+    /**
+     * 判断工具结果是否包含有效数据（非空结果）
+     */
+    private boolean hasRealToolResults(List<String> toolResults) {
+        if (toolResults == null || toolResults.isEmpty()) {
+            return false;
         }
-
-        // 验证评分
-        List<String> scores = extractScores(aiResponse);
-        for (String score : scores) {
-            if (!validateScore(score)) {
-                log.warn("AI回复中包含无效评分: {}", score);
+        for (String result : toolResults) {
+            if (result == null || result.isEmpty()) continue;
+            // 检查结果是否包含空结果标识
+            boolean looksEmpty = false;
+            for (String emptyIndicator : EMPTY_RESULT_INDICATORS) {
+                if (result.contains(emptyIndicator)) {
+                    looksEmpty = true;
+                    break;
+                }
             }
+            if (!looksEmpty) return true;
         }
-
-        // 判断整体有效性
-        boolean isValid = invalidCourses == 0 && invalidTeachers == 0;
-        String message = buildValidationMessage(validCourses, invalidCourses, validTeachers, invalidTeachers);
-
-        log.debug("AI回复验证完成 - 有效课程:{}, 无效课程:{}, 有效教师:{}, 无效教师:{}", 
-                validCourses, invalidCourses, validTeachers, invalidTeachers);
-
-        return new ValidationResult(isValid, message, validCourses, invalidCourses, validTeachers, invalidTeachers);
+        return false;
     }
 
     @Override
@@ -94,8 +121,6 @@ public class AIResponseValidationServiceImpl implements AIResponseValidationServ
         if (courseName == null || courseName.isEmpty()) {
             return false;
         }
-        
-        // 去除"课程"、"课"后缀进行模糊查询
         String keyword = courseName.replaceAll("[课程课]$", "");
         return courseBaseMapper.countByKeyword("%" + keyword + "%") > 0;
     }
@@ -105,8 +130,6 @@ public class AIResponseValidationServiceImpl implements AIResponseValidationServ
         if (teacherName == null || teacherName.isEmpty()) {
             return false;
         }
-        
-        // 去除"老师"、"教授"后缀进行模糊查询
         String keyword = teacherName.replaceAll("[老师教授]$", "");
         return courseBaseMapper.countByTeacher("%" + keyword + "%") > 0;
     }
@@ -116,72 +139,12 @@ public class AIResponseValidationServiceImpl implements AIResponseValidationServ
         if (scoreStr == null || scoreStr.isEmpty()) {
             return false;
         }
-        
         try {
-            // 提取数字部分
             String numStr = scoreStr.replaceAll("[^0-9.]", "");
             double score = Double.parseDouble(numStr);
             return score >= 1 && score <= 5;
         } catch (NumberFormatException e) {
             return false;
         }
-    }
-
-    /**
-     * 从文本中提取课程名称
-     */
-    private List<String> extractCourseNames(String text) {
-        List<String> courses = new ArrayList<>();
-        Matcher matcher = COURSE_NAME_PATTERN.matcher(text);
-        while (matcher.find()) {
-            courses.add(matcher.group());
-        }
-        return courses;
-    }
-
-    /**
-     * 从文本中提取教师名称
-     */
-    private List<String> extractTeacherNames(String text) {
-        List<String> teachers = new ArrayList<>();
-        Matcher matcher = TEACHER_PATTERN.matcher(text);
-        while (matcher.find()) {
-            teachers.add(matcher.group());
-        }
-        return teachers;
-    }
-
-    /**
-     * 从文本中提取评分
-     */
-    private List<String> extractScores(String text) {
-        List<String> scores = new ArrayList<>();
-        Matcher matcher = SCORE_PATTERN.matcher(text);
-        while (matcher.find()) {
-            scores.add(matcher.group());
-        }
-        return scores;
-    }
-
-    /**
-     * 构建验证结果消息
-     */
-    private String buildValidationMessage(int validCourses, int invalidCourses, 
-                                          int validTeachers, int invalidTeachers) {
-        StringBuilder sb = new StringBuilder();
-        
-        if (invalidCourses > 0) {
-            sb.append("发现").append(invalidCourses).append("个不存在的课程");
-        }
-        if (invalidTeachers > 0) {
-            if (sb.length() > 0) sb.append("，");
-            sb.append("发现").append(invalidTeachers).append("个不存在的教师");
-        }
-        
-        if (sb.length() == 0) {
-            sb.append("验证通过");
-        }
-        
-        return sb.toString();
     }
 }

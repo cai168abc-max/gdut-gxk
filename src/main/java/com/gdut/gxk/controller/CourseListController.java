@@ -35,7 +35,7 @@ public class CourseListController {
             return Result.success(result);
         } catch (Exception e) {
             log.error("查询课程列表失败", e);
-            return Result.error("查询课程列表失败：" + e.getMessage());
+            return Result.error("查询课程列表失败，请稍后重试");
         }
     }
 
@@ -51,7 +51,7 @@ public class CourseListController {
             return Result.success(result);
         } catch (Exception e) {
             log.error("获取默认课程列表失败", e);
-            return Result.error("获取默认课程列表失败：" + e.getMessage());
+            return Result.error("获取默认课程列表失败，请稍后重试");
         }
     }
 
@@ -79,7 +79,7 @@ public class CourseListController {
             return Result.success(result);
         } catch (Exception e) {
             log.error("搜索课程失败", e);
-            return Result.error("搜索课程失败：" + e.getMessage());
+            return Result.error("搜索课程失败，请稍后重试");
         }
     }
 }

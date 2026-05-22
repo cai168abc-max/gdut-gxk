@@ -90,7 +90,7 @@ public class SummaryDataServiceImpl implements SummaryDataService {
                 .last("LIMIT 10");
         List<CourseBase> popularCourses = courseBaseMapper.selectList(popularQuery);
         summary.setPopularCoursesByScore(popularCourses);
-        // 3.5 高频搜索词（前10）
+        // 3.5 高频搜索词（按搜索次数倒序取前10）
         LambdaQueryWrapper<SearchKeyword> keywordQuery = new LambdaQueryWrapper<>();
         keywordQuery.orderByDesc(SearchKeyword::getCount)
                 .last("LIMIT 10");

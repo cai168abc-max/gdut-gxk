@@ -14,6 +14,24 @@ public interface CourseBaseMapper extends BaseMapper<CourseBase> {
     /**
      * 课程列表动态筛选（支持搜索+筛选+分页，第一页用）
      */
+    @Select("<script>" +
+            "SELECT * FROM course_base WHERE 1=1 " +
+            "<if test='query.keyword != null and query.keyword != \"\"'>" +
+            " AND (course_name LIKE CONCAT('%',#{query.keyword},'%') " +
+            " OR teacher_name LIKE CONCAT('%',#{query.keyword},'%') " +
+            " OR tag LIKE CONCAT('%',#{query.keyword},'%')) " +
+            "</if>" +
+            "<if test='query.category != null and query.category != \"\"'>" +
+            " AND category = #{query.category} " +
+            "</if>" +
+            "<if test='query.campus != null and query.campus != \"\"'>" +
+            " AND campus = #{query.campus} " +
+            "</if>" +
+            "<if test='query.tag != null and query.tag != \"\"'>" +
+            " AND tag LIKE CONCAT('%',#{query.tag},'%') " +
+            "</if>" +
+            " ORDER BY score DESC" +
+            "</script>")
     IPage<CourseBase> selectByDynamicTj(
             IPage<CourseBase> page,
             @Param("query") CourseListQueryDTO queryDTO);
@@ -29,6 +47,7 @@ public interface CourseBaseMapper extends BaseMapper<CourseBase> {
     /**
      * 按搜索词模糊查询课程（课程名/教师名/标签，第三页AI对话用）
      */
+    @Select("SELECT * FROM course_base WHERE course_name LIKE #{keyword} OR teacher_name LIKE #{keyword} OR tag LIKE #{keyword}")
     List<CourseBase> selectByKeyword(@Param("keyword") String keyword);
 
     /**
@@ -42,4 +61,10 @@ public interface CourseBaseMapper extends BaseMapper<CourseBase> {
      */
     @Select("SELECT COUNT(*) FROM course_base WHERE teacher_name LIKE #{keyword}")
     int countByTeacher(@Param("keyword") String keyword);
+
+    /**
+     * 根据校区精确查询课程（AI工具校区搜索用）
+     */
+    @Select("SELECT * FROM course_base WHERE campus = #{campus}")
+    List<CourseBase> selectByCampus(@Param("campus") String campus);
 }

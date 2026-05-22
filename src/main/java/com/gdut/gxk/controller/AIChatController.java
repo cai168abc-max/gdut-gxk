@@ -66,7 +66,7 @@ public class AIChatController {
             
         } catch (Exception e) {
             log.error("AI对话处理失败", e);
-            return Result.error("AI对话处理失败：" + e.getMessage());
+            return Result.error("AI服务暂时不可用，请稍后重试");
         }
     }
 
@@ -126,7 +126,7 @@ public class AIChatController {
                     "热门", "热度", "热搜", "大家都在搜", "最近在搜", "最近大家都在搜什么课程");
             java.util.List<SearchKeyword> hot = java.util.Collections.emptyList();
             if (hotIntent) {
-                hot = searchKeywordMapper.selectHotByTypes(java.util.Collections.singletonList("course_name"), 5);
+                hot = searchKeywordMapper.selectHotByTypes(java.util.Collections.singletonList("general"), 5);
             }
 
             // 4) 聚合返回
@@ -138,7 +138,7 @@ public class AIChatController {
             return Result.success("可用数据聚合成功", dto);
         } catch (Exception e) {
             log.error("获取可用数据失败", e);
-            return Result.error("获取可用数据失败：" + e.getMessage());
+            return Result.error("获取可用数据失败，请稍后重试");
         }
     }
 
@@ -162,7 +162,7 @@ public class AIChatController {
             
         } catch (Exception e) {
             log.error("获取对话历史失败", e);
-            return Result.error("获取对话历史失败：" + e.getMessage());
+            return Result.error("获取对话历史失败，请稍后重试");
         }
     }
 
@@ -180,7 +180,7 @@ public class AIChatController {
             return Result.success("清洗成功", params);
         } catch (Exception e) {
             log.error("清洗失败", e);
-            return Result.error("清洗失败：" + e.getMessage());
+            return Result.error("文本处理失败，请稍后重试");
         }
     }
 
@@ -214,7 +214,7 @@ public class AIChatController {
                         "热门", "热度", "热搜", "大家都在搜", "最近在搜", "最近大家都在搜什么课程");
                 dto.setHotIntent(hotIntent);
                 if (hotIntent) {
-                    java.util.List<SearchKeyword> hot = searchKeywordMapper.selectHotByTypes(java.util.Collections.singletonList("course_name"), 5);
+                    java.util.List<SearchKeyword> hot = searchKeywordMapper.selectHotByTypes(java.util.Collections.singletonList("general"), 5);
                     dto.setHotKeywords(hot);
                 }
                 return Result.success("查询成功（缓存）", dto);
@@ -271,7 +271,7 @@ public class AIChatController {
                     "热门", "热度", "热搜", "大家都在搜", "最近在搜", "最近大家都在搜什么课程");
             java.util.List<SearchKeyword> hot = java.util.Collections.emptyList();
             if (hotIntent) {
-                hot = searchKeywordMapper.selectHotByTypes(java.util.Collections.singletonList("course_name"), 5);
+                hot = searchKeywordMapper.selectHotByTypes(java.util.Collections.singletonList("general"), 5);
             }
 
             AIAvailableDataDTO dto = new AIAvailableDataDTO();
@@ -282,19 +282,19 @@ public class AIChatController {
             return Result.success("查询成功", dto);
         } catch (Exception e) {
             log.error("clean-search 查询失败", e);
-            return Result.error("查询失败：" + e.getMessage());
+            return Result.error("查询失败，请稍后重试");
         }
     }
 
     /**
-     * 热门搜索TopN（基于搜索词表计数）
+     * 热门搜索TopN（基于搜索词表）
      * @param limit 返回条数（默认5，1-20）
-     * @param type  搜索词类型（默认course_name，可选：course_name/teacher_name/campus/college/tag/category）
+     * @param type  搜索词类型（默认0-通用，可选：0-通用/1-校区/2-类别/3-标签）
      */
     @GetMapping("/hot-search")
     public Result<java.util.List<SearchKeyword>> hotSearch(
             @RequestParam(name = "limit", required = false, defaultValue = "5") Integer limit,
-            @RequestParam(name = "type", required = false, defaultValue = "course_name") String type) {
+            @RequestParam(name = "type", required = false, defaultValue = "general") String type) {
         try {
             int lim = (limit == null ? 5 : Math.max(1, Math.min(20, limit)));
             java.util.List<String> types = java.util.Collections.singletonList(type);
@@ -302,7 +302,7 @@ public class AIChatController {
             return Result.success("热门搜索获取成功", top);
         } catch (Exception e) {
             log.error("获取热门搜索失败", e);
-            return Result.error("获取热门搜索失败：" + e.getMessage());
+            return Result.error("获取热门搜索失败，请稍后重试");
         }
     }
 
@@ -382,7 +382,7 @@ public class AIChatController {
             
         } catch (Exception e) {
             log.error("清除对话历史失败", e);
-            return Result.error("清除对话历史失败：" + e.getMessage());
+            return Result.error("清除对话历史失败，请稍后重试");
         }
     }
 
@@ -401,7 +401,7 @@ public class AIChatController {
             
         } catch (Exception e) {
             log.error("获取对话上下文失败", e);
-            return Result.error("获取对话上下文失败：" + e.getMessage());
+            return Result.error("获取对话上下文失败，请稍后重试");
         }
     }
 
@@ -421,7 +421,7 @@ public class AIChatController {
             
         } catch (Exception e) {
             log.error("保存对话上下文失败", e);
-            return Result.error("保存对话上下文失败：" + e.getMessage());
+            return Result.error("保存对话上下文失败，请稍后重试");
         }
     }
 
@@ -444,7 +444,7 @@ public class AIChatController {
             
         } catch (Exception e) {
             log.error("快速AI对话失败", e);
-            return Result.error("快速AI对话失败：" + e.getMessage());
+            return Result.error("AI服务暂时不可用，请稍后重试");
         }
     }
 
@@ -465,7 +465,7 @@ public class AIChatController {
             try {
                 emitter.send(SseEmitter.event()
                         .name("error")
-                        .data("流式AI对话处理失败：" + e.getMessage()));
+                        .data("AI服务暂时不可用，请稍后重试"));
                 emitter.completeWithError(e);
             } catch (Exception ex) {
                 log.error("发送错误消息失败", ex);
@@ -492,57 +492,7 @@ public class AIChatController {
             
         } catch (Exception e) {
             log.error("获取AI服务状态失败", e);
-            return Result.error("获取AI服务状态失败：" + e.getMessage());
-        }
-    }
-
-    /**
-     * 真实AI对话：按示例aitry调用阿里百炼应用
-     * 流程：存储会话ID与用户输入 -> 调用清洗与数据聚合 -> 构造Prompt(可用数据+用户对话) -> 调用AI并返回
-     */
-    @PostMapping("/real-chat")
-    public Result<AIChatResponseDTO> realChat(@Valid @RequestBody AIRealChatRequestDTO req) {
-        try {
-            String sessionId = req.getSessionId();
-            String userText = req.getUserInput();
-            log.info("realChat - sessionId: {}, userText: {}", sessionId, userText);
-            // 1) 清洗 + 相关数据聚合
-            AIAvailableDataDTO available = availableData(new CleanTextRequest() {{ setRawText(userText); }}, 10).getData();
-
-            // 2) 组装 Prompt：将可用数据与用户对话整合
-            StringBuilder promptBuilder = new StringBuilder();
-            promptBuilder.append("可用数据：\n");
-            promptBuilder.append(serializeAvailableData(available)).append("\n\n");
-            promptBuilder.append("用户对话：").append(userText);
-            String prompt = promptBuilder.toString();
-
-            // 3) 调用真实AI（阿里百炼）
-            String apiKey = environment.getProperty("spring.ai.dashscope.api-key");
-            String appId = environment.getProperty("spring.ai.dashscope.app-id", "a04974b2ea4d4e129b0a08e62b121584");
-            
-            com.alibaba.dashscope.app.ApplicationParam param = com.alibaba.dashscope.app.ApplicationParam.builder()
-                    .apiKey(apiKey)
-                    .appId(appId)
-                    .prompt(prompt)
-                    .sessionId(sessionId)
-                    .build();
-            com.alibaba.dashscope.app.Application application = new com.alibaba.dashscope.app.Application();
-            com.alibaba.dashscope.app.ApplicationResult result = application.call(param);
-
-            String aiText = result != null && result.getOutput() != null ? result.getOutput().getText() : "";
-
-            AIChatResponseDTO resp = new AIChatResponseDTO();
-            resp.setAiResponse(aiText);
-            log.info("realChat - aiResponse: {}", aiText);
-            resp.setContextId(sessionId);
-            resp.setRelatedCourses(available != null ? available.getMatchedCourses() : java.util.Collections.emptyList());
-            resp.setRelatedComments(java.util.Collections.emptyList());
-            resp.setProcessingTime(0L);
-            resp.setFromCache(false);
-            return Result.success("AI回复生成成功", resp);
-        } catch (Exception e) {
-            log.error("真实AI对话失败", e);
-            return Result.error("真实AI对话失败：" + e.getMessage());
+            return Result.error("获取AI服务状态失败，请稍后重试");
         }
     }
 

@@ -37,7 +37,7 @@ public class StatelessAIChatController {
             
         } catch (Exception e) {
             log.error("无状态AI对话处理失败", e);
-            return Result.error("AI对话处理失败：" + e.getMessage());
+            return Result.error("AI服务暂时不可用，请稍后重试");
         }
     }
 
@@ -56,7 +56,7 @@ public class StatelessAIChatController {
             
         } catch (Exception e) {
             log.error("获取无状态对话历史失败", e);
-            return Result.error("获取对话历史失败：" + e.getMessage());
+            return Result.error("获取对话历史失败，请稍后重试");
         }
     }
 
@@ -79,7 +79,7 @@ public class StatelessAIChatController {
             
         } catch (Exception e) {
             log.error("清除无状态对话历史失败", e);
-            return Result.error("清除对话历史失败：" + e.getMessage());
+            return Result.error("清除对话历史失败，请稍后重试");
         }
     }
 
@@ -97,7 +97,7 @@ public class StatelessAIChatController {
             
         } catch (Exception e) {
             log.error("生成上下文ID失败", e);
-            return Result.error("生成上下文ID失败：" + e.getMessage());
+            return Result.error("生成上下文ID失败，请稍后重试");
         }
     }
 
@@ -119,7 +119,7 @@ public class StatelessAIChatController {
             
         } catch (Exception e) {
             log.error("快速无状态AI对话失败", e);
-            return Result.error("快速AI对话失败：" + e.getMessage());
+            return Result.error("AI服务暂时不可用，请稍后重试");
         }
     }
 
@@ -140,7 +140,7 @@ public class StatelessAIChatController {
             
         } catch (Exception e) {
             log.error("获取AI服务状态失败", e);
-            return Result.error("获取AI服务状态失败：" + e.getMessage());
+            return Result.error("获取AI服务状态失败，请稍后重试");
         }
     }
 }

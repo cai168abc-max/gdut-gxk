@@ -34,9 +34,10 @@ public class RedisCacheServiceImpl implements RedisCacheService {
     private static final String EMPTY_MARKER = "EMPTY";
     private static final long EMPTY_EXPIRE = 60; // 空结果1分钟（防穿透）
 
-    // AI上下文Caffeine缓存（30分钟过期，最大1000个会话）
+    // AI上下文Caffeine缓存（24小时过期，最大1000个会话）
+    // 与Redis缓存过期时间保持一致，统一会话过期策略
     private final LoadingCache<String, AIChatContextDTO> aiContextCache = Caffeine.newBuilder()
-            .expireAfterWrite(30, TimeUnit.MINUTES)
+            .expireAfterWrite(24, TimeUnit.HOURS)
             .maximumSize(1000)
             .build(key -> {
                 AIChatContextDTO emptyContext = new AIChatContextDTO();

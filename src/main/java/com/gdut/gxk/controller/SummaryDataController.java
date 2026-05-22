@@ -37,7 +37,7 @@ public class SummaryDataController {
             
         } catch (Exception e) {
             log.error("获取总结统计数据失败", e);
-            return Result.error("获取统计数据失败：" + e.getMessage());
+            return Result.error("获取统计数据失败，请稍后重试");
         }
     }
 
@@ -71,7 +71,7 @@ public class SummaryDataController {
             
         } catch (Exception e) {
             log.error("获取基础统计信息失败", e);
-            return Result.error("获取基础统计信息失败：" + e.getMessage());
+            return Result.error("获取基础统计信息失败，请稍后重试");
         }
     }
 
@@ -110,7 +110,7 @@ public class SummaryDataController {
             
         } catch (Exception e) {
             log.error("获取热门课程失败", e);
-            return Result.error("获取热门课程失败：" + e.getMessage());
+            return Result.error("获取热门课程失败，请稍后重试");
         }
     }
 
@@ -149,7 +149,7 @@ public class SummaryDataController {
             
         } catch (Exception e) {
             log.error("获取人气课程失败", e);
-            return Result.error("获取人气课程失败：" + e.getMessage());
+            return Result.error("获取人气课程失败，请稍后重试");
         }
     }
 
@@ -183,7 +183,7 @@ public class SummaryDataController {
             
         } catch (Exception e) {
             log.error("获取高频搜索词失败", e);
-            return Result.error("获取高频搜索词失败：" + e.getMessage());
+            return Result.error("获取高频搜索词失败，请稍后重试");
         }
     }
 
@@ -211,7 +211,7 @@ public class SummaryDataController {
             
         } catch (Exception e) {
             log.error("获取统计概览失败", e);
-            return Result.error("获取统计概览失败：" + e.getMessage());
+            return Result.error("获取统计概览失败，请稍后重试");
         }
     }
 }
